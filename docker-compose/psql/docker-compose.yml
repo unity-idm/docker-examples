@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:18.1-alpine
+    ports: 
+      - 5432:5432
+    environment:
+      POSTGRES_USER: unity_dbuser
+      POSTGRES_DB: unity_db
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    volumes:
+      - pgdata_18:/var/lib/postgresql/data
+      - ./pg_password.txt:/run/secrets/pg_password:Z
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.2
+
+secrets:
+  pg_password:
+    file: ./pg_password.txt
+
+volumes:
+  pgdata_18:
+
+networks:
+  app_net:
+    driver: bridge
+    name: app_net
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

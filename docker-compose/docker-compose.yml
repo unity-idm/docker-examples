@@ -1,0 +1,87 @@
+services:
+  db:
+    image: postgres:18.1-alpine
+    ports: 
+      - 5432:5432
+    environment:
+      POSTGRES_USER: unity_dbuser
+      POSTGRES_DB: unity_db
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    volumes:
+      - pgdata_18:/var/lib/postgresql/data
+      - ./psql/pg_password.txt:/run/secrets/pg_password:Z
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.2
+
+  unity-primary:
+    image: unity:4.4.0-rc1
+    ports: 
+      - 2443:2443
+    environment:
+      STARTUP_PROPERTIES: /app/conf_managed/startup.properties
+      unityConfig: /app/conf_managed/unityServer.conf
+      CONF: /app/conf_managed
+      UNITY_PORT: 2443
+      UNITY_HOST: 172.30.0.3
+      UNITY_EXTERNAL_ADDR: 192.168.1.67:9443
+      UNITY_DB: unity_db
+      PSQL_HOST: 172.30.0.2
+    volumes:
+      - ./unity-primary/workspace:/app/workspace:Z
+      - ./unity-primary/logs:/app/logs:Z
+      - ./unity-primary/conf:/app/conf_managed:Z
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.3
+
+  unity-replica:
+    image: unity:4.4.0-rc1
+    ports: 
+      - 3443:2443
+    environment:
+      STARTUP_PROPERTIES: /app/conf_managed/startup.properties
+      unityConfig: /app/conf_managed/unityServer.conf
+      CONF: /app/conf_managed
+      UNITY_PORT: 2443
+      UNITY_HOST: 172.30.0.4
+      UNITY_EXTERNAL_ADDR: 192.168.1.67:9443
+      UNITY_DB: unity_db
+      PSQL_HOST: 172.30.0.2
+    volumes:
+      - ./unity-replica/workspace:/app/workspace:Z
+      - ./unity-replica/logs:/app/logs:Z
+      - ./unity-replica/conf:/app/conf_managed:Z
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.4
+
+  haproxy:
+    image: haproxy:3.2
+    container_name: haproxy
+    restart: unless-stopped
+    ports:
+      - "9443:2443"
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro,Z
+      - ./haproxy/certs:/etc/haproxy/certs:ro,Z
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.100
+
+
+secrets:
+  pg_password:
+    file: ./psql/pg_password.txt
+
+volumes:
+  pgdata_18:
+
+networks:
+  app_net:
+    driver: bridge
+    name: app_net
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+

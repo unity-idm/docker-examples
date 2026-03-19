@@ -1,0 +1,25 @@
+services:
+  unity-replica-1:
+    image: unity:4.4.0-rc1
+    ports: 
+      - 3443:2443
+    environment:
+      STARTUP_PROPERTIES: /app/conf_managed/startup.properties
+      unityConfig: /app/conf_managed/unityServer.conf
+      CONF: /app/conf_managed
+      UNITY_PORT: 2443
+      UNITY_HOST: 172.30.0.4
+      UNITY_EXTERNAL_ADDR: 192.168.1.67:9443
+      UNITY_DB: unity_db
+      PSQL_HOST: 172.30.0.2
+    volumes:
+      - ./workspace:/app/workspace:Z
+      - ./logs:/app/logs:Z
+      - ./conf:/app/conf_managed:Z
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.4
+
+networks:
+  app_net:
+    external: true

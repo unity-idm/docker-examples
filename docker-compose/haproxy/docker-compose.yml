@@ -1,0 +1,17 @@
+services:
+  haproxy:
+    image: haproxy:3.2
+    container_name: haproxy
+    restart: unless-stopped
+    ports:
+      - "9443:2443"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro,Z
+      - ./certs:/etc/haproxy/certs:ro,Z
+    networks:
+      app_net:
+        ipv4_address: 172.30.0.100
+
+networks:
+  app_net:
+    external: true
